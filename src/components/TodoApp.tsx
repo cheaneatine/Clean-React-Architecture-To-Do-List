@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useTaskUseCase } from "../usecases/UseTaskUseCase";
+import { useThemeUseCase } from "../hooks/useThemeCases";
 import { useDarkMode } from "../hooks/useDarkMode";
 import "../styles/todo.css";
 
@@ -15,11 +16,14 @@ const TodoApp: React.FC = () => {
     getFilteredTasks,
   } = useTaskUseCase();
 
+  const { isColorLight, applyThemeColor } = useThemeUseCase();
   const [title, setTitle] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
   const [darkMode, setDarkMode] = useDarkMode();
+  const [customColor, setCustomColor] = useState("#3b82f6");
+  const [isLightColor, setIsLightColor] = useState(false);
 
   useEffect(() => {
     loadTasks();
@@ -35,32 +39,40 @@ const TodoApp: React.FC = () => {
     return () => window.removeEventListener("keydown", handler);
   }, [handleRemoveCompleted]);
 
+  useEffect(() => {
+    applyThemeColor(customColor);
+    setIsLightColor(isColorLight(customColor));
+  }, [customColor]);
+
   const filteredTasks = getFilteredTasks(filter);
 
   return (
     <div className={darkMode ? "dark" : ""}>
       <div className="body-wrapper">
         <div className="todo-container">
-          {/* Header */}
           <div className="todo-header">
             <h1>Todo App</h1>
-            <button
-              className="theme-toggle-btn"
-              onClick={() => setDarkMode(!darkMode)}
+            <div
+              style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}
             >
-              <span
-                style={{
-                  display: "inline-block",
-                  transition: "transform 0.3s ease",
-                  transform: darkMode ? "rotate(180deg)" : "rotate(0deg)",
-                }}
+              <button
+                className="theme-toggle-btn"
+                onClick={() => setDarkMode(!darkMode)}
               >
-                {darkMode ? "🌞" : "🌙"}
-              </span>
-            </button>
+                <span className={`emoji-icon ${darkMode ? "rotate" : ""}`}>
+                  {darkMode ? "🌞" : "🌙"}
+                </span>
+              </button>
+              <input
+                type="color"
+                value={customColor}
+                onChange={(e) => setCustomColor(e.target.value)}
+                className="color-picker"
+                title="Pick a theme color"
+              />
+            </div>
           </div>
 
-          {/* Input */}
           <div className="input-row">
             <input
               className="todo-input"
@@ -85,29 +97,32 @@ const TodoApp: React.FC = () => {
             </button>
           </div>
 
-          {/* Stats */}
           <div className="todo-stats">
             <div className="todo-stats-values">
               <div>
-                <p>{allTasks.length}</p>
-                <p>Total</p>
+                <p className="stat-number">{allTasks.length}</p>
+                <p className="stat-label">Total</p>
               </div>
               <div>
-                <p>{allTasks.filter((t) => !t.completed).length}</p>
-                <p>Active</p>
+                <p className="stat-number">
+                  {allTasks.filter((t) => !t.completed).length}
+                </p>
+                <p className="stat-label">Active</p>
               </div>
               <div>
-                <p>{allTasks.filter((t) => t.completed).length}</p>
-                <p>Completed</p>
+                <p className="stat-number">
+                  {allTasks.filter((t) => t.completed).length}
+                </p>
+                <p className="stat-label">Completed</p>
               </div>
             </div>
-
-            {/* Filters */}
             <div className="todo-filters">
               {["all", "active", "completed"].map((f) => (
                 <button
                   key={f}
-                  className={`todo-filter-btn ${filter === f ? "active" : ""}`}
+                  className={`todo-filter-btn ${filter === f ? "active" : ""} ${
+                    filter === f && isLightColor ? "light-active" : ""
+                  }`}
                   onClick={() => setFilter(f as any)}
                 >
                   {f[0].toUpperCase() + f.slice(1)}
@@ -116,7 +131,6 @@ const TodoApp: React.FC = () => {
             </div>
           </div>
 
-          {/* Task List */}
           <div className="task-list">
             {filteredTasks.map((task) => (
               <div key={task.id} className="task-item">
@@ -155,8 +169,8 @@ const TodoApp: React.FC = () => {
                         setEditingId(task.id);
                         setEditingTitle(task.title);
                       }}
-                      style={{ flex: 1, cursor: "text" }}
                       className={task.completed ? "completed" : ""}
+                      style={{ flex: 1, cursor: "text" }}
                     >
                       {task.title}
                     </span>
@@ -172,7 +186,6 @@ const TodoApp: React.FC = () => {
             ))}
           </div>
 
-          {/* Footer */}
           <p className="todo-footer">
             Press Enter to add • Double-click to edit • Ctrl+Delete to remove
             completed
