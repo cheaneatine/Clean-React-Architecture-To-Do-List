@@ -6,6 +6,7 @@ import { taskRepository } from "../repositoryFactory";
 import { setTasks } from "../redux/task.slice";
 import type { RootState } from "../redux/store";
 import { showLimitedToast } from "../utilities/toastManager";
+import { launchConfetti } from "../utilities/confetti";
 
 export const useTaskUseCase = () => {
   const dispatch = useDispatch();
@@ -58,12 +59,22 @@ export const useTaskUseCase = () => {
   const handleToggleComplete = async (task: Task): Promise<void> => {
     const updatedTask = { ...task, completed: !task.completed };
     await taskRepository.updateTask(updatedTask);
+
     const updated = await taskRepository.getAllTasks();
     dispatch(setTasks(updated));
+
     showLimitedToast(
       updatedTask.completed ? "Task completed" : "Task marked incomplete",
       updatedTask.completed ? "success" : "error"
     );
+
+    // Trigger confetti if all tasks are completed
+    const allCompleted =
+      updated.length > 0 && updated.every((t) => t.completed);
+    if (allCompleted) {
+      launchConfetti();
+      showLimitedToast("🎉 All tasks completed!", "success");
+    }
   };
 
   const handleRemoveTask = async (task: Task): Promise<void> => {
