@@ -319,6 +319,17 @@ body {
   color: darkred;
 }
 
+/* Emoji Animation */
+.emoji-icon {
+  display: inline-block;
+  font-size: 1.5rem;
+  transition: transform 0.4s ease;
+}
+
+.theme-toggle-btn:active .emoji-icon {
+  transform: rotate(180deg) scale(0.5);
+}
+
 /* Footer */
 .todo-footer {
   text-align: center;
