@@ -117,7 +117,7 @@ const TodoApp: React.FC = () => {
           </div>
 
           {/* Task List */}
-          <div>
+          <div className="task-list">
             {filteredTasks.map((task) => (
               <div key={task.id} className="task-item">
                 <div className="task-left">

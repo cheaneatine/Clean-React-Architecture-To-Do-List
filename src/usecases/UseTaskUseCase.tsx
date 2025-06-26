@@ -62,7 +62,7 @@ export const useTaskUseCase = () => {
     dispatch(setTasks(updated));
     showLimitedToast(
       updatedTask.completed ? "Task completed" : "Task marked incomplete",
-      "success"
+      updatedTask.completed ? "success" : "error"
     );
   };
 
