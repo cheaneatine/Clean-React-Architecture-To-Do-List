@@ -296,6 +296,11 @@ body {
   font-size: 1.2rem;
   cursor: pointer;
   transition: color 0.3s;
+  outline: none; /* ← prevent default outline */
+}
+.task-delete:focus {
+  outline: none; /* ← prevent border on click */
+  box-shadow: none;
 }
 .task-delete:hover {
   color: darkred;
