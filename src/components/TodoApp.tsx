@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useTaskUseCase } from "../usecases/UseTaskUseCase";
 import { useThemeUseCase } from "../hooks/useThemeCases";
 import { useDarkMode } from "../hooks/useDarkMode";
+import { Sun, Moon } from "lucide-react";
 import "../styles/todo.css";
 
 const TodoApp: React.FC = () => {
@@ -59,17 +60,27 @@ const TodoApp: React.FC = () => {
                 className="theme-toggle-btn"
                 onClick={() => setDarkMode(!darkMode)}
               >
-                <span className={`emoji-icon ${darkMode ? "rotate" : ""}`}>
-                  {darkMode ? "🌞" : "🌙"}
-                </span>
+                {darkMode ? (
+                  <Sun className="theme-icon" />
+                ) : (
+                  <Moon className="theme-icon" />
+                )}
               </button>
-              <input
-                type="color"
-                value={customColor}
-                onChange={(e) => setCustomColor(e.target.value)}
-                className="color-picker"
-                title="Pick a theme color"
-              />
+              <div className="color-picker-wrapper">
+                <label
+                  htmlFor="theme-color"
+                  className="color-swatch"
+                  style={{ backgroundColor: customColor }}
+                />
+                <input
+                  id="theme-color"
+                  type="color"
+                  value={customColor}
+                  onChange={(e) => setCustomColor(e.target.value)}
+                  className="color-picker-input"
+                  title="Pick a theme color"
+                />
+              </div>
             </div>
           </div>
 
