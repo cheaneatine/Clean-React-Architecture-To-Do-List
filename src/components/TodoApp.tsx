@@ -17,13 +17,13 @@ const TodoApp: React.FC = () => {
     getFilteredTasks,
   } = useTaskUseCase();
 
-  const { isColorLight, applyThemeColor } = useThemeUseCase();
+  const { isColorLight, applyThemeColor, loadThemeColor } = useThemeUseCase();
   const [title, setTitle] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
   const [darkMode, setDarkMode] = useDarkMode();
-  const [customColor, setCustomColor] = useState("#3b82f6");
+  const [customColor, setCustomColor] = useState(loadThemeColor());
   const [isLightColor, setIsLightColor] = useState(false);
 
   useEffect(() => {

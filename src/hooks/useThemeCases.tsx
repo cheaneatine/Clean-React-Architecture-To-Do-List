@@ -1,4 +1,6 @@
 export function useThemeUseCase() {
+  const THEME_COLOR_KEY = "theme-color";
+
   function isColorLight(hex: string) {
     const c = hex.substring(1);
     const rgb = parseInt(c, 16);
@@ -10,22 +12,17 @@ export function useThemeUseCase() {
   }
 
   function applyThemeColor(color: string) {
-    // Update CSS variable
     document.documentElement.style.setProperty("--primary-color", color);
+    localStorage.setItem(THEME_COLOR_KEY, color);
+  }
 
-    // Adjust all active filter buttons
-    const light = isColorLight(color);
-    document.querySelectorAll(".todo-filter-btn.active").forEach((btn) => {
-      if (light) {
-        btn.classList.add("light-active");
-      } else {
-        btn.classList.remove("light-active");
-      }
-    });
+  function loadThemeColor(): string {
+    return localStorage.getItem(THEME_COLOR_KEY) || "#3b82f6";
   }
 
   return {
     isColorLight,
     applyThemeColor,
+    loadThemeColor,
   };
 }
