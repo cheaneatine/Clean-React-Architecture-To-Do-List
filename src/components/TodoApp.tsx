@@ -52,7 +52,7 @@ const TodoApp: React.FC = () => {
       <div className="body-wrapper">
         <div className="todo-container">
           <div className="todo-header">
-            <h1>Todo App</h1>
+            <h1>To Do List</h1>
             <div
               style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}
             >
