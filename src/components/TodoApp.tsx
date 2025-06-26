@@ -156,16 +156,24 @@ const TodoApp: React.FC = () => {
                       value={editingTitle}
                       onChange={(e) => setEditingTitle(e.target.value)}
                       onBlur={() => {
-                        handleEditTask(task, editingTitle);
+                        const trimmed = editingTitle.trim();
+                        if (trimmed && trimmed !== task.title) {
+                          handleEditTask(task, trimmed);
+                        }
                         setEditingId(null);
                         setEditingTitle("");
                       }}
                       onKeyDown={(e) => {
+                        const trimmed = editingTitle.trim();
+
                         if (e.key === "Enter") {
-                          handleEditTask(task, editingTitle);
+                          if (trimmed && trimmed !== task.title) {
+                            handleEditTask(task, trimmed);
+                          }
                           setEditingId(null);
                           setEditingTitle("");
                         }
+
                         if (e.key === "Escape") {
                           setEditingId(null);
                           setEditingTitle("");
