@@ -12,27 +12,28 @@ export const useTaskUseCase = () => {
   const dispatch = useDispatch();
   const allTasks = useSelector((state: RootState) => state.taskState.tasks);
 
-  const syncTasks = async () => {
+  const loadTasks = useCallback(async () => {
     const tasks = await taskRepository.getAllTasks();
     dispatch(setTasks(tasks));
-    return tasks;
-  };
-
-  const loadTasks = useCallback(syncTasks, [dispatch]);
+  }, [dispatch]);
 
   const handleAddTask = async (
     title: string,
     dueDate?: string
   ): Promise<string | null> => {
     const trimmed = title.trim();
-    if (!trimmed)
-      return showLimitedToast("Task title cannot be empty", "error"), "empty";
+    if (!trimmed) {
+      showLimitedToast("Task title cannot be empty", "error");
+      return "empty";
+    }
 
     const duplicate = allTasks.find(
       (task) => task.title.trim().toLowerCase() === trimmed.toLowerCase()
     );
-    if (duplicate)
-      return showLimitedToast("Task already exists", "error"), "duplicate";
+    if (duplicate) {
+      showLimitedToast("Task already exists", "error");
+      return "duplicate";
+    }
 
     const newTask: Task = {
       id: uuidv4(),
@@ -41,7 +42,8 @@ export const useTaskUseCase = () => {
       dueDate,
     };
     await taskRepository.addTask(newTask);
-    await syncTasks();
+    const updated = await taskRepository.getAllTasks();
+    dispatch(setTasks(updated));
     showLimitedToast("Task added", "success");
     return null;
   };
@@ -52,16 +54,20 @@ export const useTaskUseCase = () => {
     newDueDate?: string
   ): Promise<void> => {
     const trimmed = newTitle.trim();
-    if (!trimmed)
-      return showLimitedToast("Task title cannot be empty", "error");
+    if (!trimmed) {
+      showLimitedToast("Task title cannot be empty", "error");
+      return;
+    }
 
-    const updatedTask = {
+    const updatedTask: Task = {
       ...task,
       title: trimmed,
       dueDate: newDueDate ?? task.dueDate,
     };
+
     await taskRepository.updateTask(updatedTask);
-    await syncTasks();
+    const updated = await taskRepository.getAllTasks();
+    dispatch(setTasks(updated));
     showLimitedToast("Task updated", "success");
   };
 
@@ -69,7 +75,9 @@ export const useTaskUseCase = () => {
     const updatedTask = { ...task, completed: !task.completed };
     await taskRepository.updateTask(updatedTask);
 
-    const updated = await syncTasks();
+    const updated = await taskRepository.getAllTasks();
+    dispatch(setTasks(updated));
+
     showLimitedToast(
       updatedTask.completed ? "Task completed" : "Task marked incomplete",
       updatedTask.completed ? "success" : "error"
@@ -84,23 +92,29 @@ export const useTaskUseCase = () => {
   };
 
   const handleRemoveTask = async (task: Task): Promise<void> => {
-    if (!task.completed)
-      return showLimitedToast("You can only delete completed tasks", "error");
+    if (!task.completed) {
+      showLimitedToast("You can only delete completed tasks", "error");
+      return;
+    }
 
     await taskRepository.removeTask(task.id);
-    await syncTasks();
+    const updated = await taskRepository.getAllTasks();
+    dispatch(setTasks(updated));
     showLimitedToast("Task deleted", "success");
   };
 
   const handleRemoveCompleted = async (): Promise<void> => {
     const completed = allTasks.filter((t) => t.completed);
-    if (completed.length === 0)
-      return showLimitedToast("No completed tasks to remove");
+    if (completed.length === 0) {
+      showLimitedToast("No completed tasks to remove");
+      return;
+    }
 
-    await Promise.all(
-      completed.map((task) => taskRepository.removeTask(task.id))
-    );
-    await syncTasks();
+    for (const task of completed) {
+      await taskRepository.removeTask(task.id);
+    }
+    const updated = await taskRepository.getAllTasks();
+    dispatch(setTasks(updated));
     showLimitedToast("Completed tasks removed", "success");
   };
 

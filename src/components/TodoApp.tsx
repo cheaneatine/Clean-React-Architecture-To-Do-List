@@ -17,19 +17,23 @@ const TodoApp: React.FC = () => {
     getFilteredTasks,
   } = useTaskUseCase();
 
-  const theme = useThemeUseCase();
+  // Theme
+  const { isColorLight, applyThemeColor, loadThemeColor } = useThemeUseCase();
   const [darkMode, setDarkMode] = useDarkMode();
+  const [customColor, setCustomColor] = useState(loadThemeColor());
+  const [isLightColor, setIsLightColor] = useState(false);
 
-  const [state, setState] = useState({
-    title: "",
-    dueDate: "",
-    editingId: null as string | null,
-    editingTitle: "",
-    editingDueDate: "",
-    filter: "all" as "all" | "active" | "completed",
-    customColor: theme.loadThemeColor(),
-    isLightColor: false,
-  });
+  // Task Input
+  const [title, setTitle] = useState("");
+  const [dueDate, setDueDate] = useState("");
+
+  // Task Editing
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
+  const [editingDueDate, setEditingDueDate] = useState("");
+
+  // Filtering
+  const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
 
   useEffect(() => {
     loadTasks();
@@ -46,42 +50,35 @@ const TodoApp: React.FC = () => {
   }, [handleRemoveCompleted]);
 
   useEffect(() => {
-    theme.applyThemeColor(state.customColor);
-    setState((prev) => ({
-      ...prev,
-      isLightColor: theme.isColorLight(state.customColor),
-    }));
-  }, [state.customColor]);
+    applyThemeColor(customColor);
+    setIsLightColor(isColorLight(customColor));
+  }, [customColor]);
 
-  const filteredTasks = getFilteredTasks(state.filter);
-
-  const resetInputs = () =>
-    setState((prev) => ({ ...prev, title: "", dueDate: "" }));
-  const cancelEdit = () =>
-    setState((prev) => ({
-      ...prev,
-      editingId: null,
-      editingTitle: "",
-      editingDueDate: "",
-    }));
+  const filteredTasks = getFilteredTasks(filter);
 
   const addTaskAndReset = () => {
-    handleAddTask(state.title, state.dueDate);
-    resetInputs();
+    handleAddTask(title, dueDate);
+    setTitle("");
+    setDueDate("");
   };
 
   const handleEditKeyDown = (e: React.KeyboardEvent, task: any) => {
     if (e.key === "Enter") {
-      const trimmed = state.editingTitle.trim();
+      const trimmed = editingTitle.trim();
       if (
         trimmed &&
-        (trimmed !== task.title || state.editingDueDate !== task.dueDate)
+        (trimmed !== task.title || editingDueDate !== task.dueDate)
       ) {
-        handleEditTask(task, trimmed, state.editingDueDate);
+        handleEditTask(task, trimmed, editingDueDate);
       }
-      cancelEdit();
-    } else if (e.key === "Escape") {
-      cancelEdit();
+      setEditingId(null);
+      setEditingTitle("");
+      setEditingDueDate("");
+    }
+    if (e.key === "Escape") {
+      setEditingId(null);
+      setEditingTitle("");
+      setEditingDueDate("");
     }
   };
 
@@ -108,18 +105,13 @@ const TodoApp: React.FC = () => {
                 <label
                   htmlFor="theme-color"
                   className="color-swatch"
-                  style={{ backgroundColor: state.customColor }}
+                  style={{ backgroundColor: customColor }}
                 />
                 <input
                   id="theme-color"
                   type="color"
-                  value={state.customColor}
-                  onChange={(e) =>
-                    setState((prev) => ({
-                      ...prev,
-                      customColor: e.target.value,
-                    }))
-                  }
+                  value={customColor}
+                  onChange={(e) => setCustomColor(e.target.value)}
                   className="color-picker-input"
                   title="Pick a theme color"
                 />
@@ -130,23 +122,24 @@ const TodoApp: React.FC = () => {
           <div className="input-row">
             <input
               className="todo-input"
-              value={state.title}
-              onChange={(e) =>
-                setState((prev) => ({ ...prev, title: e.target.value }))
-              }
-              onKeyDown={(e) => e.key === "Enter" && addTaskAndReset()}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  addTaskAndReset();
+                }
+              }}
               placeholder="Add new task..."
             />
             <input
               type="date"
               className="todo-input"
-              value={state.dueDate}
-              onChange={(e) =>
-                setState((prev) => ({ ...prev, dueDate: e.target.value }))
-              }
+              value={dueDate}
+              min={new Date().toISOString().split("T")[0]}
+              onChange={(e) => setDueDate(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  e.preventDefault();
+                  e.preventDefault(); // stop calendar popup
                   addTaskAndReset();
                 }
               }}
@@ -179,16 +172,10 @@ const TodoApp: React.FC = () => {
               {["all", "active", "completed"].map((f) => (
                 <button
                   key={f}
-                  className={`todo-filter-btn ${
-                    state.filter === f ? "active" : ""
-                  } ${
-                    state.filter === f && state.isLightColor
-                      ? "light-active"
-                      : ""
+                  className={`todo-filter-btn ${filter === f ? "active" : ""} ${
+                    filter === f && isLightColor ? "light-active" : ""
                   }`}
-                  onClick={() =>
-                    setState((prev) => ({ ...prev, filter: f as any }))
-                  }
+                  onClick={() => setFilter(f as any)}
                 >
                   {f[0].toUpperCase() + f.slice(1)}
                 </button>
@@ -200,14 +187,14 @@ const TodoApp: React.FC = () => {
             {filteredTasks.map((task) => (
               <div key={task.id} className="task-item">
                 <div className="task-left">
-                  {state.editingId !== task.id && (
+                  {editingId !== task.id && (
                     <input
                       type="checkbox"
                       checked={task.completed}
                       onChange={() => handleToggleComplete(task)}
                     />
                   )}
-                  {state.editingId === task.id ? (
+                  {editingId === task.id ? (
                     <div
                       style={{
                         display: "flex",
@@ -217,26 +204,17 @@ const TodoApp: React.FC = () => {
                       }}
                     >
                       <input
-                        value={state.editingTitle}
-                        onChange={(e) =>
-                          setState((prev) => ({
-                            ...prev,
-                            editingTitle: e.target.value,
-                          }))
-                        }
+                        value={editingTitle}
+                        onChange={(e) => setEditingTitle(e.target.value)}
                         onKeyDown={(e) => handleEditKeyDown(e, task)}
                         className="todo-input"
                         autoFocus
                       />
                       <input
                         type="date"
-                        value={state.editingDueDate}
-                        onChange={(e) =>
-                          setState((prev) => ({
-                            ...prev,
-                            editingDueDate: e.target.value,
-                          }))
-                        }
+                        value={editingDueDate}
+                        min={new Date().toISOString().split("T")[0]}
+                        onChange={(e) => setEditingDueDate(e.target.value)}
                         onKeyDown={(e) => handleEditKeyDown(e, task)}
                         className="todo-input"
                       />
@@ -244,38 +222,40 @@ const TodoApp: React.FC = () => {
                         <button
                           className="todo-button"
                           onClick={() => {
-                            const trimmed = state.editingTitle.trim();
+                            const trimmed = editingTitle.trim();
                             if (
                               trimmed &&
                               (trimmed !== task.title ||
-                                state.editingDueDate !== task.dueDate)
+                                editingDueDate !== task.dueDate)
                             ) {
-                              handleEditTask(
-                                task,
-                                trimmed,
-                                state.editingDueDate
-                              );
+                              handleEditTask(task, trimmed, editingDueDate);
                             }
-                            cancelEdit();
+                            setEditingId(null);
+                            setEditingTitle("");
+                            setEditingDueDate("");
                           }}
                         >
                           Save
                         </button>
-                        <button className="task-delete" onClick={cancelEdit}>
+                        <button
+                          className="task-delete"
+                          onClick={() => {
+                            setEditingId(null);
+                            setEditingTitle("");
+                            setEditingDueDate("");
+                          }}
+                        >
                           Cancel
                         </button>
                       </div>
                     </div>
                   ) : (
                     <div
-                      onDoubleClick={() =>
-                        setState((prev) => ({
-                          ...prev,
-                          editingId: task.id,
-                          editingTitle: task.title,
-                          editingDueDate: task.dueDate || "",
-                        }))
-                      }
+                      onDoubleClick={() => {
+                        setEditingId(task.id);
+                        setEditingTitle(task.title);
+                        setEditingDueDate(task.dueDate || "");
+                      }}
                       style={{
                         flex: 1,
                         cursor: "text",
